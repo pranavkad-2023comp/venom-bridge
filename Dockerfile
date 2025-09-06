@@ -1,6 +1,6 @@
 FROM node:20-bullseye
 
-# Install all necessary Chromium dependencies
+# Install all necessary Chromium dependencies for Puppeteer
 RUN apt-get update && apt-get install -y \
     ca-certificates fonts-liberation libnss3 lsb-release wget xdg-utils \
     gconf-service libasound2 libatk1.0-0 libc6 libcairo2 libcups2 \
@@ -13,9 +13,12 @@ RUN apt-get update && apt-get install -y \
 WORKDIR /app
 
 COPY package*.json ./
-RUN npm install --production
+
+# Use --omit=dev to avoid npm warnings
+RUN npm install --omit=dev
 
 COPY . .
 
 EXPOSE 3000
+
 CMD ["node", "index.js"]
