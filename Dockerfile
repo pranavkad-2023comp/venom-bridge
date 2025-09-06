@@ -1,6 +1,6 @@
 FROM node:20-bullseye
 
-# Install all necessary Chromium dependencies for Puppeteer
+# Install Chromium dependencies required by Puppeteer / Venom
 RUN apt-get update && apt-get install -y \
     ca-certificates fonts-liberation libnss3 lsb-release wget xdg-utils \
     gconf-service libasound2 libatk1.0-0 libc6 libcairo2 libcups2 \
@@ -14,7 +14,6 @@ WORKDIR /app
 
 COPY package*.json ./
 
-# Use --omit=dev to avoid npm warnings
 RUN npm install --omit=dev
 
 COPY . .
