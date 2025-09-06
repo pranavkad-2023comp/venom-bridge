@@ -3,10 +3,12 @@ const express = require('express');
 const axios = require('axios');
 const fs = require('fs');
 
+console.log('Starting Venom bridge...');
+
 const PORT = process.env.PORT || 3000;
-const N8N_WEBHOOK = 'https://pk2005.app.n8n.cloud/webhook/whats-in'; // Your webhook URL
-const SECRET = 'venom_secret_123'; // Your secret key
-const SESSION_DIR = '/tmp/.sessions'; // Render writable folder
+const N8N_WEBHOOK = 'https://pk2005.app.n8n.cloud/webhook/whats-in';
+const SECRET = 'venom_secret_123';
+const SESSION_DIR = '/tmp/.sessions'; // Writable folder on Render
 
 if (!fs.existsSync(SESSION_DIR)) fs.mkdirSync(SESSION_DIR, { recursive: true });
 
@@ -42,9 +44,6 @@ function start(client) {
     catch (e) { console.error('Send fail:', e.message); res.status(500).json({ error: e.message }); }
   });
 
-  // Listen on all network interfaces so Render can detect the port
+  // Bind to all interfaces so Render detects the port
   app.listen(PORT, '0.0.0.0', () => console.log(`Venom bridge running on port ${PORT}`));
 }
-
-
-
