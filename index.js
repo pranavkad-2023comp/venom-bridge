@@ -4,7 +4,7 @@ const axios = require('axios');
 const fs = require('fs');
 
 const PORT = process.env.PORT || 3000;
-const N8N_WEBHOOK = process.env.N8N_WEBHOOK_URL; // e.g. https://<your-n8n>.onrender.com/webhook/whats-in
+const N8N_WEBHOOK = process.env.https://pk2005.app.n8n.cloud/webhook/whats-in; // e.g. https://<your-n8n>.onrender.com/webhook/whats-in
 const SECRET = process.env.VENOM_SECRET || 'change_me';
 const SESSION_DIR = '/tmp/.sessions'; // Render writable folder
 
