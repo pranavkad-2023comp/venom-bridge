@@ -24,13 +24,16 @@ function start(client) {
   const app = express();
   app.use(express.json());
 
+  // Forward incoming WhatsApp messages to N8N
   client.onMessage(async (msg) => {
     try { await axios.post(N8N_WEBHOOK, msg); } 
     catch (e) { console.error('Forward fail:', e.message); }
   });
 
+  // Endpoint to send WhatsApp messages via API
   app.post('/send', async (req, res) => {
-    if (req.headers['x-api-key'] !== SECRET) return res.status(401).json({ error: 'unauthorized' });
+    if (req.headers['x-api-key'] !== SECRET)
+      return res.status(401).json({ error: 'unauthorized' });
 
     const { to, text } = req.body;
     if (!to || !text) return res.status(400).json({ error: 'missing to or text' });
@@ -39,8 +42,10 @@ function start(client) {
     catch (e) { console.error('Send fail:', e.message); res.status(500).json({ error: e.message }); }
   });
 
-  app.listen(PORT, () => console.log(`Venom bridge running on port ${PORT}`));
+  // Listen on all network interfaces so Render can detect the port
+  app.listen(PORT, '0.0.0.0', () => console.log(`Venom bridge running on port ${PORT}`));
 }
+
 
 
 
