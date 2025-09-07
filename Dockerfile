@@ -14,6 +14,7 @@ WORKDIR /app
 
 COPY package*.json ./
 
+# Use --omit=dev to avoid deprecated --production warning
 RUN npm install --omit=dev
 
 COPY . .
