@@ -62,13 +62,14 @@ async function initVenom(attempt = 1) {
   console.log(`Attempting to initialize Venom (attempt ${attempt}/${MAX_RETRIES})...`);
   try {
     const client = await venom.create({
-      session: 'n8n-session',
-      headless: true,
+      session: '',             // FORCE new QR generation
+      headless: false,         // QR will be printed in logs
+      multidevice: true,       // multi-device support
+      restartOnCrash: true,
       folderNameToken: SESSION_DIR,
       puppeteerOptions: {
         args: ['--no-sandbox', '--disable-setuid-sandbox']
       },
-      // optional: disableWelcome: true  // if venom supports this option in your version
     });
 
     venomClient = client;
