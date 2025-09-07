@@ -10,33 +10,27 @@ const N8N_WEBHOOK = process.env.N8N_WEBHOOK_URL || 'https://pk2005.app.n8n.cloud
 const SECRET = process.env.VENOM_SECRET || 'venom_secret_123';
 const SESSION_DIR = '/tmp/.sessions';
 
-// ensure session dir exists
 if (!fs.existsSync(SESSION_DIR)) fs.mkdirSync(SESSION_DIR, { recursive: true });
 
 let venomClient = null;
 let venomReady = false;
 
-// Start Express server immediately so Render can detect the port
 const app = express();
 app.use(express.json());
 
-// Health & status endpoints
 app.get('/health', (req, res) => res.json({ ok: true }));
 app.get('/status', (req, res) => res.json({
   venomReady,
   sessionDir: SESSION_DIR
 }));
 
-// Send endpoint — returns 503 if venom not ready
 app.post('/send', async (req, res) => {
   if (!venomReady || !venomClient) {
     return res.status(503).json({ error: 'venom-not-ready' });
   }
-
   if (req.headers['x-api-key'] !== SECRET) {
     return res.status(401).json({ error: 'unauthorized' });
   }
-
   const { to, text } = req.body;
   if (!to || !text) return res.status(400).json({ error: 'missing to or text' });
 
@@ -49,34 +43,39 @@ app.post('/send', async (req, res) => {
   }
 });
 
-// Always listen on 0.0.0.0 so Render can detect the port
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`Venom bridge HTTP server listening on 0.0.0.0:${PORT}`);
 });
 
-// Venom init with retries (so server stays up even if Venom fails)
 const MAX_RETRIES = 10;
-const RETRY_DELAY_MS = 15000; // 15 seconds
+const RETRY_DELAY_MS = 15000;
 
 async function initVenom(attempt = 1) {
   console.log(`Attempting to initialize Venom (attempt ${attempt}/${MAX_RETRIES})...`);
   try {
-    const client = await venom.create({
-      session: '',             // FORCE new QR generation
-      headless: false,         // QR will be printed in logs
-      multidevice: true,       // multi-device support
-      restartOnCrash: true,
-      folderNameToken: SESSION_DIR,
-      puppeteerOptions: {
-        args: ['--no-sandbox', '--disable-setuid-sandbox']
-      },
-    });
+    const client = await venom.create(
+      {
+        session: '',                 // keep empty => forces fresh login
+        multidevice: true,
+        headless: true,              // safe on Render
+        folderNameToken: SESSION_DIR,
+        puppeteerOptions: { args: ['--no-sandbox', '--disable-setuid-sandbox'] },
+        restartOnCrash: true,
+        // ✅ This prints the QR data URL & ASCII hint directly in Render logs
+        catchQR: (base64Qr, asciiQR) => {
+          console.log('================= SCAN THIS QR =================');
+          console.log(asciiQR); // optional tiny ASCII preview
+          console.log('Open this URL in a browser to see QR as an image:');
+          console.log(`data:image/png;base64,${base64Qr}`);
+          console.log('================================================');
+        }
+      }
+    );
 
     venomClient = client;
     venomReady = true;
     console.log('Venom client initialized and ready.');
 
-    // Attach message forwarder
     client.onMessage(async (msg) => {
       try {
         if (N8N_WEBHOOK) await axios.post(N8N_WEBHOOK, msg);
@@ -85,7 +84,6 @@ async function initVenom(attempt = 1) {
       }
     });
 
-    // Optional: monitor state changes
     if (typeof client.onStateChange === 'function') {
       client.onStateChange((state) => {
         console.log('Venom state changed:', state);
@@ -108,5 +106,4 @@ async function initVenom(attempt = 1) {
   }
 }
 
-// Start Venom initialization in background
 initVenom();
